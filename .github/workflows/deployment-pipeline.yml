@@ -40,7 +40,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: dev
-
     permissions:
       contents: write
 
@@ -75,7 +74,6 @@ jobs:
     needs: deploy-dev
     runs-on: ubuntu-latest
     environment: staging
-
     permissions:
       contents: write
 
@@ -104,3 +102,37 @@ jobs:
             --title "Staging Release $TAG" \
             --notes "$(printf '%s\n\nBuild tag: %s\n' "$RELEASE_NOTE" "$BUILD_TAG")" \
             --prerelease
+
+  deploy-production:
+    name: Deploy to Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: activity-log-build
+
+      - name: Verify artifact
+        run: test -f build.zip
+
+      - name: Create Production Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_TAG: ${{ vars.BUILD_TAG }}
+          RELEASE_NOTE: ${{ vars.RELEASE_NOTE }}
+        run: |
+          set -euo pipefail
+          test -n "$BUILD_TAG"
+          test -n "$RELEASE_NOTE"
+          TAG="${BUILD_TAG}.${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" build.zip \
+            --target "$GITHUB_SHA" \
+            --title "Production Release $TAG" \
+            --notes "$(printf '%s\n\nBuild tag: %s\n' "$RELEASE_NOTE" "$BUILD_TAG")" \
+            --latest
