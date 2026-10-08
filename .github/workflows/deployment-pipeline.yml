@@ -61,14 +61,46 @@ jobs:
           RELEASE_NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
           set -euo pipefail
-
           test -n "$BUILD_TAG"
           test -n "$RELEASE_NOTE"
-
           TAG="${BUILD_TAG}.${GITHUB_RUN_NUMBER}"
-
           gh release create "$TAG" build.zip \
             --target "$GITHUB_SHA" \
             --title "Development Release $TAG" \
+            --notes "$(printf '%s\n\nBuild tag: %s\n' "$RELEASE_NOTE" "$BUILD_TAG")" \
+            --prerelease
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: staging
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: activity-log-build
+
+      - name: Verify artifact
+        run: test -f build.zip
+
+      - name: Create Staging Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_TAG: ${{ vars.BUILD_TAG }}
+          RELEASE_NOTE: ${{ vars.RELEASE_NOTE }}
+        run: |
+          set -euo pipefail
+          test -n "$BUILD_TAG"
+          test -n "$RELEASE_NOTE"
+          TAG="${BUILD_TAG}.${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" build.zip \
+            --target "$GITHUB_SHA" \
+            --title "Staging Release $TAG" \
             --notes "$(printf '%s\n\nBuild tag: %s\n' "$RELEASE_NOTE" "$BUILD_TAG")" \
             --prerelease
