@@ -8,8 +8,39 @@ permissions:
   contents: read
 
 jobs:
+  matrix-test:
+    name: Node.js ${{ matrix.node-version }} Validation
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Validate JavaScript syntax
+        run: node --check src/index.js
+
+      - name: Build verification
+        run: bun run build
+
   build:
     name: Build with Bun
+    needs: matrix-test
     runs-on: ubuntu-latest
 
     steps:
