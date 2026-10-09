@@ -102,10 +102,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.build.outputs.version }}
+          BUILD_TAG: ${{ vars.BUILD_TAG }}
           RELEASE_NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
           set -euo pipefail
           test -n "$VERSION"
+          test -n "$BUILD_TAG"
           test -n "$RELEASE_NOTE"
 
           TAG="dev-v${VERSION}.${GITHUB_RUN_NUMBER}"
@@ -118,7 +120,7 @@ jobs:
           gh release create "$TAG" build.zip \
             --target "$GITHUB_SHA" \
             --title "Development Release $TAG" \
-            --notes "$(printf '%s\n\nVersion: %s\n' "$RELEASE_NOTE" "$VERSION")" \
+            --notes "$(printf '%s\n\nBUILD_TAG: %s\nVersion: %s\n' "$RELEASE_NOTE" "$BUILD_TAG" "$VERSION")" \
             --prerelease
 
   deploy-staging:
@@ -143,10 +145,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.build.outputs.version }}
+          BUILD_TAG: ${{ vars.BUILD_TAG }}
           RELEASE_NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
           set -euo pipefail
           test -n "$VERSION"
+          test -n "$BUILD_TAG"
           test -n "$RELEASE_NOTE"
 
           TAG="staging-v${VERSION}.${GITHUB_RUN_NUMBER}"
@@ -159,7 +163,7 @@ jobs:
           gh release create "$TAG" build.zip \
             --target "$GITHUB_SHA" \
             --title "Staging Release $TAG" \
-            --notes "$(printf '%s\n\nVersion: %s\n' "$RELEASE_NOTE" "$VERSION")" \
+            --notes "$(printf '%s\n\nBUILD_TAG: %s\nVersion: %s\n' "$RELEASE_NOTE" "$BUILD_TAG" "$VERSION")" \
             --prerelease
 
   deploy-production:
@@ -185,10 +189,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.build.outputs.version }}
+          BUILD_TAG: ${{ vars.BUILD_TAG }}
           RELEASE_NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
           set -euo pipefail
           test -n "$VERSION"
+          test -n "$BUILD_TAG"
           test -n "$RELEASE_NOTE"
 
           TAG="prod-v${VERSION}.${GITHUB_RUN_NUMBER}"
@@ -201,5 +207,5 @@ jobs:
           gh release create "$TAG" build.zip \
             --target "$GITHUB_SHA" \
             --title "Production Release $TAG" \
-            --notes "$(printf '%s\n\nVersion: %s\n' "$RELEASE_NOTE" "$VERSION")" \
+            --notes "$(printf '%s\n\nBUILD_TAG: %s\nVersion: %s\n' "$RELEASE_NOTE" "$BUILD_TAG" "$VERSION")" \
             --latest
