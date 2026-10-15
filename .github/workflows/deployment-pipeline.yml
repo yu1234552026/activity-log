@@ -142,7 +142,7 @@ jobs:
           name: activity-log-build
 
       - name: Extract build artifact
-        run: unzip build.zip
+        run: unzip -o build.zip
 
       - name: Run Integration Tests
         run: bun run test:integration
