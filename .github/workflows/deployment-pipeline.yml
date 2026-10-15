@@ -85,6 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TEST_ENV: staging
+      COVERAGE_THRESHOLD: "80"
 
     steps:
       - name: Checkout repository
@@ -105,6 +106,68 @@ jobs:
         run: |
           set -o pipefail
           bun run test:coverage 2>&1 | tee coverage-report.txt
+
+      - name: Check Application Coverage Threshold
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const report = fs.readFileSync(
+            'coverage-report.txt',
+            'utf8'
+          );
+
+          const threshold = Number(
+            process.env.COVERAGE_THRESHOLD
+          );
+
+          if (!Number.isFinite(threshold) ||
+              threshold < 0 ||
+              threshold > 100) {
+            console.error('Invalid coverage threshold');
+            process.exit(1);
+          }
+
+          const lines = report.split('\n');
+
+          const target = lines.find(line =>
+            /^\s*#?\s*templateEngine\.js\s*\|/.test(line)
+          );
+
+          if (!target) {
+            console.error(
+              'Application coverage data not found'
+            );
+            process.exit(1);
+          }
+
+          const columns = target.split('|');
+          const coverage = Number(columns[1].trim());
+
+          if (!Number.isFinite(coverage)) {
+            console.error('Invalid coverage data');
+            process.exit(1);
+          }
+
+          console.log(
+            `Application Line Coverage: ${coverage}%`
+          );
+
+          console.log(
+            `Required Threshold: ${threshold}%`
+          );
+
+          if (coverage < threshold) {
+            console.error(
+              'Coverage below threshold. Deployment blocked.'
+            );
+            process.exit(1);
+          }
+
+          console.log(
+            'Coverage gate passed. Deployment allowed.'
+          );
+          NODE
 
       - name: Upload Coverage Report
         if: always()
